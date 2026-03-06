@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#141416"/>
+      <stop offset="100%" style="stop-color:#1a1a1e"/>
+    </linearGradient>
+    <linearGradient id="stroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7DD3A8"/>
+      <stop offset="60%" style="stop-color:#5BB88A"/>
+      <stop offset="100%" style="stop-color:#7DD3A8;stop-opacity:0.15"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="1024" height="1024" rx="228" fill="url(#bg)"/>
+
+  <!-- Subtle inner glow -->
+  <circle cx="512" cy="512" r="300" fill="none" stroke="#7DD3A8" stroke-width="1" opacity="0.04"/>
+
+  <!-- Ensō circle - the zen brush stroke -->
+  <!-- Gap at top-right gives it the classic incomplete ensō look -->
+  <path
+    d="M 620 240
+       C 740 290, 820 400, 820 520
+       C 820 690, 690 820, 512 820
+       C 334 820, 204 690, 204 512
+       C 204 334, 334 204, 500 204"
+    fill="none"
+    stroke="url(#stroke)"
+    stroke-width="42"
+    stroke-linecap="round"
+    opacity="0.9"
+  />
+
+  <!-- Small dot - like a breath point -->
+  <circle cx="512" cy="512" r="6" fill="#7DD3A8" opacity="0.5"/>
+</svg>
