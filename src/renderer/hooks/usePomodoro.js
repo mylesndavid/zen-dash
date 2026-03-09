@@ -32,6 +32,14 @@ export default function usePomodoro() {
   const [taskTimeAccumulated, setTaskTimeAccumulated] = useState(0) // seconds spent on current task
   const intervalRef = useRef(null)
   const taskTimerRef = useRef(null)
+  const isRunningRef = useRef(false)
+  const timeLeftRef = useRef(WORK_DURATION)
+  const taskRef = useRef('')
+
+  // Keep refs in sync for tray interval
+  useEffect(() => { isRunningRef.current = isRunning }, [isRunning])
+  useEffect(() => { timeLeftRef.current = timeLeft }, [timeLeft])
+  useEffect(() => { taskRef.current = currentTask?.title || '' }, [currentTask])
 
   const getDuration = useCallback((m) => {
     if (m === 'work') return WORK_DURATION
@@ -39,23 +47,27 @@ export default function usePomodoro() {
     return LONG_BREAK
   }, [])
 
-  // Update menu bar tray
+  // Update menu bar tray on a simple interval
   useEffect(() => {
     if (!window.api?.updateTray) return
-    if (isRunning) {
-      const m = Math.floor(timeLeft / 60)
-      const s = (timeLeft % 60).toString().padStart(2, '0')
-      const label = currentTask ? `${m}:${s} ${currentTask.title}` : `${m}:${s}`
-      window.api.updateTray(label)
-    } else {
-      window.api.updateTray('')
-    }
-  }, [timeLeft, isRunning, currentTask])
+    const tick = setInterval(() => {
+      if (isRunningRef.current) {
+        const t = timeLeftRef.current
+        const m = Math.floor(t / 60)
+        const s = (t % 60).toString().padStart(2, '0')
+        const name = taskRef.current
+        window.api.updateTray(name ? `${m}:${s} ${name}` : `${m}:${s}`)
+      } else {
+        window.api.updateTray('')
+      }
+    }, 1000)
+    return () => clearInterval(tick)
+  }, [])
 
   // Send data to tray click menu
   useEffect(() => {
-    if (!window.api?.updateTrayData) return
     try {
+      if (!window.api?.updateTrayData) return
       const tasks = JSON.parse(localStorage.getItem('zen-dash-manual-tasks') || '[]')
       const open = tasks.filter(t => !t.done).map(t => t.title)
       const m = Math.floor(timeLeft / 60)
@@ -65,8 +77,8 @@ export default function usePomodoro() {
         task: currentTask?.title || '',
         tasks: open,
       })
-    } catch {}
-  }, [currentTask, timeLeft, isRunning])
+    } catch (e) { console.error('tray data error', e) }
+  }, [currentTask?.title, timeLeft, isRunning])
 
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
@@ -138,17 +150,15 @@ export default function usePomodoro() {
   const setCurrentTaskWrapped = (task) => {
     // Save accumulated time if switching tasks
     if (currentTask && taskTimeAccumulated > 0) {
-      const entry = {
-        id: currentTask.id || Date.now().toString(),
-        title: currentTask.title,
-        timeSpent: taskTimeAccumulated,
-        completedAt: null, // not completed, just switched
-        switchedAt: new Date().toISOString(),
-      }
       // Don't add to completed, just reset timer
     }
     setTaskTimeAccumulated(0)
-    setCurrentTask(task)
+    // Normalize task to simple {id, title} so it works everywhere
+    if (task) {
+      setCurrentTask({ id: task.id || 'manual', title: String(task.title || '') })
+    } else {
+      setCurrentTask(null)
+    }
   }
 
   const start = () => setIsRunning(true)

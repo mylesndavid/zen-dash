@@ -120,7 +120,8 @@ ipcMain.handle('open-external', async (event, url) => {
 
 ipcMain.on('update-tray', (event, text) => {
   if (tray) {
-    tray.setTitle(text, { fontType: 'monospacedDigit' })
+    console.log('[TRAY]', JSON.stringify(text))
+    tray.setTitle(text || '', { fontType: 'monospacedDigit' })
   }
 })
 
