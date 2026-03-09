@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 
-function Dashboard({ onClose }) {
+function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [timeBlocks, setTimeBlocks] = useState([])
   const [completedTasks, setCompletedTasks] = useState([])
@@ -116,18 +116,10 @@ function Dashboard({ onClose }) {
   const maxPom = Math.max(...weekDays.map(d => d.pomodoros), 1)
 
   return (
-    <div className="fixed inset-0 bg-zen-bg/95 z-[80] flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-8 py-5 border-b border-zen-border/30">
+      <div className="flex items-center justify-between px-8 py-4">
         <h1 className="text-lg font-light text-zen-text tracking-wide">Home</h1>
-        <button
-          onClick={onClose}
-          className="text-zen-muted hover:text-zen-text transition-colors p-3 -m-2"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
       </div>
 
       <div className="flex-1 flex min-h-0">

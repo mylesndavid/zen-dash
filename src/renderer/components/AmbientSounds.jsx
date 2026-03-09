@@ -10,27 +10,37 @@ const SOUNDS = [
 ]
 
 function AmbientSounds() {
-  const [active, setActive] = useState({}) // { soundId: volume (0-1) }
+  const [active, setActive] = useState({})
   const [show, setShow] = useState(false)
   const audiosRef = useRef({})
+  const panelRef = useRef(null)
 
   useEffect(() => {
-    // Clean up on unmount
     return () => {
       Object.values(audiosRef.current).forEach(a => { a.pause(); a.src = '' })
     }
   }, [])
 
+  // Click outside to close
+  useEffect(() => {
+    if (!show) return
+    const handleClick = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        setShow(false)
+      }
+    }
+    setTimeout(() => document.addEventListener('mousedown', handleClick), 0)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [show])
+
   const toggleSound = (sound) => {
     if (active[sound.id]) {
-      // Stop
       if (audiosRef.current[sound.id]) {
         audiosRef.current[sound.id].pause()
         delete audiosRef.current[sound.id]
       }
       setActive(prev => { const next = { ...prev }; delete next[sound.id]; return next })
     } else {
-      // Start
       const audio = new Audio(sound.url)
       audio.loop = true
       audio.volume = 0.4
@@ -50,7 +60,7 @@ function AmbientSounds() {
   const activeCount = Object.keys(active).length
 
   return (
-    <div className="relative">
+    <div className="relative" ref={panelRef}>
       <button
         onClick={() => setShow(!show)}
         className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs transition-colors ${

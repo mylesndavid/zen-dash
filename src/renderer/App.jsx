@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Pomodoro from './components/Pomodoro'
 import TimeBlocks from './components/TimeBlocks'
 import TaskList from './components/TaskList'
@@ -18,16 +18,24 @@ import { recordPomodoro } from './components/FocusStats'
 function App() {
   const timer = usePomodoro()
   const { blocks, addBlock, updateBlock, deleteBlock, categories } = useTimeBlocks()
+  const [page, setPage] = useState('main') // 'main' | 'home'
   const [zenMode, setZenMode] = useState(false)
   const [expanded, setExpanded] = useState(null)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
-  const [showDashboard, setShowDashboard] = useState(false)
+  const [showNewDay, setShowNewDay] = useState(false)
   const [prevPomodoros, setPrevPomodoros] = useState(timer.completedPomodoros)
+  const [dayKey, setDayKey] = useState(0) // increment to force re-render after new day
 
-  // Check if we need the New Day screen
+  // Auto-show new day on launch
   const today = new Date().toISOString().split('T')[0]
-  const lastDay = localStorage.getItem('zen-dash-current-day')
-  const [showNewDay, setShowNewDay] = useState(lastDay !== today)
+  const [checkedDay] = useState(() => {
+    const last = localStorage.getItem('zen-dash-current-day')
+    if (last !== today) return true
+    return false
+  })
+  useEffect(() => {
+    if (checkedDay) setShowNewDay(true)
+  }, [])
 
   useEffect(() => {
     if (timer.completedPomodoros > prevPomodoros) {
@@ -67,49 +75,99 @@ function App() {
     }
   }
 
+  const handleNewDayComplete = useCallback(() => {
+    setShowNewDay(false)
+    setDayKey(k => k + 1) // force children to re-mount with fresh localStorage
+    setPage('main')
+  }, [])
+
   const isHidden = (id) => expanded !== null && expanded !== id
 
   return (
     <div className="h-screen flex flex-col bg-zen-bg zen-texture overflow-hidden">
-      {showNewDay && <NewDay onStart={() => setShowNewDay(false)} />}
+      {showNewDay && (
+        <NewDay
+          onStart={handleNewDayComplete}
+          onCancel={() => setShowNewDay(false)}
+        />
+      )}
       {zenMode && <ZenMode timer={timer} onExit={() => setZenMode(false)} />}
       {showCommandPalette && <CommandPalette onAction={handleCommand} onClose={() => setShowCommandPalette(false)} />}
-      {showDashboard && <Dashboard onClose={() => setShowDashboard(false)} />}
 
-      {/* Top bar with controls centered */}
-      <div className="h-10 flex-shrink-0 flex items-center justify-center" style={{ WebkitAppRegion: 'drag' }}>
-        <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' }}>
-          <MiniTimer timer={timer} onZenMode={() => setZenMode(true)} />
-          <div className="w-px h-4 bg-zen-border/20" />
-          <AmbientSounds />
-          <div className="w-px h-4 bg-zen-border/20" />
+      {/* Draggable area for traffic lights */}
+      <div className="h-12 flex-shrink-0" style={{ WebkitAppRegion: 'drag' }} />
+
+      {/* Top bar pill */}
+      <div className="flex-shrink-0 flex items-center justify-center pb-3">
+        <div className="flex items-center gap-1 bg-zen-surface border border-zen-border/40 rounded-full px-1.5 py-1">
+          {/* Page tabs */}
           <button
-            onClick={() => setShowDashboard(true)}
-            className="text-zen-muted/40 hover:text-zen-muted transition-colors p-1"
-            title="Home"
+            onClick={() => setPage('main')}
+            className={`px-3 py-1 rounded-full text-xs transition-colors ${
+              page === 'main' ? 'bg-zen-card text-zen-text' : 'text-zen-muted hover:text-zen-text'
+            }`}
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-            </svg>
+            Workspace
           </button>
           <button
+            onClick={() => setPage('home')}
+            className={`px-3 py-1 rounded-full text-xs transition-colors ${
+              page === 'home' ? 'bg-zen-card text-zen-text' : 'text-zen-muted hover:text-zen-text'
+            }`}
+          >
+            Home
+          </button>
+
+          <div className="w-px h-4 bg-zen-border/30 mx-1" />
+
+          {/* Timer */}
+          <MiniTimer timer={timer} onZenMode={() => setZenMode(true)} />
+
+          <div className="w-px h-4 bg-zen-border/30 mx-1" />
+
+          {/* Controls */}
+          <AmbientSounds />
+          <button
             onClick={() => setShowNewDay(true)}
-            className="text-zen-muted/40 hover:text-zen-muted transition-colors p-1"
+            className="text-zen-muted hover:text-zen-sage transition-colors px-2 py-1 rounded-full text-xs"
             title="New Day"
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-            </svg>
+            New Day
           </button>
           <button
             onClick={() => setShowCommandPalette(true)}
-            className="text-zen-muted/30 hover:text-zen-muted text-xs transition-colors px-2 py-1 rounded border border-zen-border/30 hover:border-zen-border"
+            className="text-zen-muted/40 hover:text-zen-muted text-xs transition-colors px-2 py-1"
           >
             K
           </button>
         </div>
       </div>
 
+      {/* Page content */}
+      {page === 'main' ? (
+        <MainPage
+          key={`main-${dayKey}`}
+          timer={timer}
+          blocks={blocks}
+          categories={categories}
+          addBlock={addBlock}
+          updateBlock={updateBlock}
+          deleteBlock={deleteBlock}
+          expanded={expanded}
+          setExpanded={setExpanded}
+          isHidden={isHidden}
+          setZenMode={setZenMode}
+        />
+      ) : (
+        <Dashboard key={`home-${dayKey}`} />
+      )}
+    </div>
+  )
+}
+
+function MainPage({ timer, blocks, categories, addBlock, updateBlock, deleteBlock, expanded, setExpanded, isHidden, setZenMode }) {
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Greeting + Status */}
       <div className="flex-shrink-0 flex items-center justify-between px-5 pb-2">
         <Greeting />
@@ -121,28 +179,24 @@ function App() {
         expanded ? '' : 'grid-cols-2'
       }`} style={expanded ? { gridTemplateColumns: '1fr', gridTemplateRows: '1fr' } : { gridTemplateRows: '1fr 1fr' }}>
 
-        {/* Q1: Pomodoro */}
         <Quadrant id="pomodoro" expanded={expanded} onExpand={setExpanded} hidden={isHidden('pomodoro')}>
           <div className="h-full flex items-center justify-center">
             <Pomodoro timer={timer} onZenMode={() => setZenMode(true)} />
           </div>
         </Quadrant>
 
-        {/* Q2: Timeline */}
         <Quadrant id="timeline" expanded={expanded} onExpand={setExpanded} hidden={isHidden('timeline')}>
           <div className="h-full overflow-y-auto">
             <TimeBlocks blocks={blocks} categories={categories} onAddBlock={addBlock} onDeleteBlock={deleteBlock} onEditBlock={updateBlock} />
           </div>
         </Quadrant>
 
-        {/* Q3: Tasks */}
         <Quadrant id="tasks" expanded={expanded} onExpand={setExpanded} hidden={isHidden('tasks')}>
           <div className="h-full overflow-y-auto">
             <TaskList onSelectTask={timer.setCurrentTask} currentTask={timer.currentTask} />
           </div>
         </Quadrant>
 
-        {/* Q4: Canvas */}
         <Quadrant id="canvas" expanded={expanded} onExpand={setExpanded} hidden={isHidden('canvas')}>
           <Canvas />
         </Quadrant>
@@ -153,7 +207,6 @@ function App() {
 
 function Quadrant({ id, expanded, onExpand, hidden, children }) {
   if (hidden) return null
-
   const isExpanded = expanded === id
 
   return (
