@@ -64,11 +64,8 @@ if (process.platform === 'darwin') {
 app.whenReady().then(() => {
   createWindow()
 
-  // Create a tiny transparent icon for the tray
-  const icon = nativeImage.createFromBuffer(
-    Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQABNjN9GQAAAABJREFTrkJggg==', 'base64'),
-    { width: 1, height: 1 }
-  )
+  const icon = nativeImage.createFromPath(join(__dirname, 'trayTemplate@2x.png'))
+  icon.setTemplateImage(true)
   tray = new Tray(icon)
   tray.setTitle('')
   updateTrayMenu()

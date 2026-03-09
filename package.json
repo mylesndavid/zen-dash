@@ -22,6 +22,7 @@
       "dist/**/*",
       "electron.js",
       "preload.cjs",
+      "trayTemplate@2x.png",
       "src/main/**/*"
     ],
     "mac": {

@@ -39,13 +39,14 @@ export default function usePomodoro() {
     return LONG_BREAK
   }, [])
 
-  // Update menu bar tray - timer text only when there's a focus task
+  // Update menu bar tray
   useEffect(() => {
     if (!window.api?.updateTray) return
-    if (isRunning && currentTask) {
+    if (isRunning) {
       const m = Math.floor(timeLeft / 60)
       const s = (timeLeft % 60).toString().padStart(2, '0')
-      window.api.updateTray(`${m}:${s} ${currentTask.title}`)
+      const label = currentTask ? `${m}:${s} ${currentTask.title}` : `${m}:${s}`
+      window.api.updateTray(label)
     } else {
       window.api.updateTray('')
     }
