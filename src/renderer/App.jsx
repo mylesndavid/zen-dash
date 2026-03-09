@@ -9,6 +9,7 @@ import AmbientSounds from './components/AmbientSounds'
 import MiniTimer from './components/MiniTimer'
 import CommandPalette from './components/CommandPalette'
 import Dashboard from './components/Dashboard'
+import NewDay from './components/NewDay'
 import ZenMode from './components/ZenMode'
 import usePomodoro from './hooks/usePomodoro'
 import useTimeBlocks from './hooks/useTimeBlocks'
@@ -23,6 +24,11 @@ function App() {
   const [showDashboard, setShowDashboard] = useState(false)
   const [prevPomodoros, setPrevPomodoros] = useState(timer.completedPomodoros)
 
+  // Check if we need the New Day screen
+  const today = new Date().toISOString().split('T')[0]
+  const lastDay = localStorage.getItem('zen-dash-current-day')
+  const [showNewDay, setShowNewDay] = useState(lastDay !== today)
+
   useEffect(() => {
     if (timer.completedPomodoros > prevPomodoros) {
       recordPomodoro()
@@ -32,6 +38,7 @@ function App() {
 
   useEffect(() => {
     const handleKey = (e) => {
+      if (showNewDay) return
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         if (e.key === 'Escape') e.target.blur()
         return
@@ -43,7 +50,7 @@ function App() {
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [timer.toggle])
+  }, [timer.toggle, showNewDay])
 
   const handleCommand = (id) => {
     switch (id) {
@@ -52,6 +59,7 @@ function App() {
       case 'reset-timer': timer.reset(); break
       case 'skip-timer': timer.skip(); break
       case 'zen-mode': setZenMode(true); break
+      case 'new-day': setShowNewDay(true); break
       case 'expand-timeline': setExpanded('timeline'); break
       case 'expand-tasks': setExpanded('tasks'); break
       case 'expand-canvas': setExpanded('canvas'); break
@@ -63,6 +71,7 @@ function App() {
 
   return (
     <div className="h-screen flex flex-col bg-zen-bg zen-texture overflow-hidden">
+      {showNewDay && <NewDay onStart={() => setShowNewDay(false)} />}
       {zenMode && <ZenMode timer={timer} onExit={() => setZenMode(false)} />}
       {showCommandPalette && <CommandPalette onAction={handleCommand} onClose={() => setShowCommandPalette(false)} />}
       {showDashboard && <Dashboard onClose={() => setShowDashboard(false)} />}
@@ -81,6 +90,15 @@ function App() {
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setShowNewDay(true)}
+            className="text-zen-muted/40 hover:text-zen-muted transition-colors p-1"
+            title="New Day"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
             </svg>
           </button>
           <button
