@@ -108,8 +108,49 @@ ipcMain.handle('get-linear-me', async (event, apiKey) => {
 })
 
 ipcMain.handle('show-notification', async (event, title, body) => {
-  const notif = new Notification({ title, body })
+  const notif = new Notification({
+    title,
+    body,
+    silent: false,
+    urgency: 'critical',
+    timeoutType: 'never',
+    actions: [
+      { type: 'button', text: 'Snooze 5min' },
+      { type: 'button', text: 'Dismiss' },
+    ],
+  })
   notif.show()
+  notif.on('click', () => {
+    if (mainWindow) { mainWindow.show(); mainWindow.focus() }
+  })
+  notif.on('action', (e, idx) => {
+    if (idx === 0) {
+      // Snooze - fire again in 5 minutes
+      setTimeout(() => {
+        const snooze = new Notification({
+          title,
+          body: `(snoozed) ${body}`,
+          silent: false,
+          urgency: 'critical',
+          timeoutType: 'never',
+          actions: [
+            { type: 'button', text: 'Snooze 5min' },
+            { type: 'button', text: 'Dismiss' },
+          ],
+        })
+        snooze.show()
+        snooze.on('click', () => {
+          if (mainWindow) { mainWindow.show(); mainWindow.focus() }
+        })
+        snooze.on('action', (e2, idx2) => {
+          if (idx2 === 0) {
+            // Re-snooze via IPC to renderer
+            mainWindow?.webContents.send('snooze-reminder', { title, body })
+          }
+        })
+      }, 5 * 60 * 1000)
+    }
+  })
   return { success: true }
 })
 
