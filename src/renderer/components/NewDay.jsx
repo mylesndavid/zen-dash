@@ -34,7 +34,8 @@ function NewDay({ onStart }) {
     // Mark new day as started
     localStorage.setItem('zen-dash-current-day', today)
 
-    onStart(intention.trim())
+    // Reload so all components pick up fresh state
+    window.location.reload()
   }
 
   const hour = new Date().getHours()
@@ -87,7 +88,7 @@ function NewDay({ onStart }) {
           onClick={() => {
             const today = new Date().toISOString().split('T')[0]
             localStorage.setItem('zen-dash-current-day', today)
-            onStart('')
+            window.location.reload()
           }}
           className="text-xs text-zen-muted/20 hover:text-zen-muted transition-colors"
         >

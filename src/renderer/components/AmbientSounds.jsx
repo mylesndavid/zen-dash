@@ -69,7 +69,7 @@ function AmbientSounds() {
               <div key={sound.id} className="flex items-center gap-2">
                 <button
                   onClick={() => toggleSound(sound)}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-medium transition-all ${
+                  className={`w-8 h-8 min-w-[32px] flex-shrink-0 rounded-lg flex items-center justify-center text-[10px] font-medium transition-all ${
                     active[sound.id] ? 'bg-zen-sage/15 text-zen-sage scale-110' : 'bg-zen-surface text-zen-muted hover:bg-zen-border/30'
                   }`}
                 >
