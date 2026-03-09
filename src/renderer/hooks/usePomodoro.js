@@ -39,6 +39,34 @@ export default function usePomodoro() {
     return LONG_BREAK
   }, [])
 
+  // Update menu bar tray - timer text only when there's a focus task
+  useEffect(() => {
+    if (!window.api?.updateTray) return
+    if (isRunning && currentTask) {
+      const m = Math.floor(timeLeft / 60)
+      const s = (timeLeft % 60).toString().padStart(2, '0')
+      window.api.updateTray(`${m}:${s} ${currentTask.title}`)
+    } else {
+      window.api.updateTray('')
+    }
+  }, [timeLeft, isRunning, currentTask])
+
+  // Send data to tray click menu
+  useEffect(() => {
+    if (!window.api?.updateTrayData) return
+    try {
+      const tasks = JSON.parse(localStorage.getItem('zen-dash-manual-tasks') || '[]')
+      const open = tasks.filter(t => !t.done).map(t => t.title)
+      const m = Math.floor(timeLeft / 60)
+      const s = (timeLeft % 60).toString().padStart(2, '0')
+      window.api.updateTrayData({
+        timer: isRunning ? `${m}:${s}` : '',
+        task: currentTask?.title || '',
+        tasks: open,
+      })
+    } catch {}
+  }, [currentTask, timeLeft, isRunning])
+
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
       intervalRef.current = setInterval(() => {

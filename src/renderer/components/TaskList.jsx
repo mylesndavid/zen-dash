@@ -136,34 +136,15 @@ function TaskList({ onSelectTask, currentTask }) {
       {/* Manual Tasks */}
       <div className="space-y-1 mb-3">
         {manualTasks.map(task => (
-          <div key={task.id} className={`flex items-center gap-2 px-3 py-1.5 group rounded-lg cursor-pointer transition-colors ${
-            currentTask?.id === task.id ? 'bg-zen-sage/10' : 'hover:bg-zen-card'
-          }`}>
-            <button
-              onClick={(e) => { e.stopPropagation(); toggleManualTask(task.id) }}
-              className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
-                task.done ? 'bg-zen-sage border-zen-sage' : 'border-zen-border hover:border-zen-sage'
-              }`}
-            >
-              {task.done && (
-                <svg className="w-2.5 h-2.5 text-zen-bg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </button>
-            <span
-              onClick={() => !task.done && onSelectTask({ id: task.id, title: task.title })}
-              className={`text-xs flex-1 ${task.done ? 'text-zen-muted line-through' : 'text-zen-text'}`}
-            >
-              {task.title}
-            </span>
-            <button
-              onClick={(e) => { e.stopPropagation(); deleteManualTask(task.id) }}
-              className="text-zen-muted/0 group-hover:text-zen-muted hover:text-zen-coral text-xs transition-colors"
-            >
-              ×
-            </button>
-          </div>
+          <ManualTaskRow
+            key={task.id}
+            task={task}
+            isActive={currentTask?.id === task.id}
+            onToggle={() => toggleManualTask(task.id)}
+            onSelect={() => !task.done && onSelectTask({ id: task.id, title: task.title })}
+            onDelete={() => deleteManualTask(task.id)}
+            onRename={(title) => setManualTasks(prev => prev.map(t => t.id === task.id ? { ...t, title } : t))}
+          />
         ))}
       </div>
 
@@ -176,6 +157,67 @@ function TaskList({ onSelectTask, currentTask }) {
           className="w-full bg-transparent text-xs text-zen-text placeholder-zen-muted/40 focus:outline-none"
         />
       </form>
+    </div>
+  )
+}
+
+function ManualTaskRow({ task, isActive, onToggle, onSelect, onDelete, onRename }) {
+  const [editing, setEditing] = useState(false)
+  const [editText, setEditText] = useState(task.title)
+
+  const handleDoubleClick = (e) => {
+    e.stopPropagation()
+    if (task.done) return
+    setEditText(task.title)
+    setEditing(true)
+  }
+
+  const handleSave = () => {
+    if (editText.trim() && editText !== task.title) onRename(editText.trim())
+    setEditing(false)
+  }
+
+  return (
+    <div className={`flex items-center gap-2 px-3 py-1.5 group rounded-lg cursor-pointer transition-colors ${
+      isActive ? 'bg-zen-sage/10' : 'hover:bg-zen-card'
+    }`}>
+      <button
+        onClick={(e) => { e.stopPropagation(); onToggle() }}
+        className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
+          task.done ? 'bg-zen-sage border-zen-sage' : 'border-zen-border hover:border-zen-sage'
+        }`}
+      >
+        {task.done && (
+          <svg className="w-2.5 h-2.5 text-zen-bg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </button>
+      {editing ? (
+        <input
+          autoFocus
+          value={editText}
+          onChange={e => setEditText(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false) }}
+          className="text-xs flex-1 bg-transparent text-zen-text focus:outline-none border-b border-zen-sage/30 py-0.5"
+          onClick={e => e.stopPropagation()}
+        />
+      ) : (
+        <span
+          onClick={onSelect}
+          onDoubleClick={handleDoubleClick}
+          className={`text-xs flex-1 ${task.done ? 'text-zen-muted line-through' : 'text-zen-text'}`}
+        >
+          {task.title}
+        </span>
+      )}
+      <button
+        onClick={(e) => { e.stopPropagation(); onDelete() }}
+        className="text-zen-muted/0 group-hover:text-zen-muted hover:text-zen-coral text-xs transition-colors"
+      >
+        ×
+      </button>
     </div>
   )
 }

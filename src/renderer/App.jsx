@@ -6,10 +6,11 @@ import Canvas from './components/Canvas'
 import StatusBar from './components/StatusBar'
 import Greeting from './components/Greeting'
 import AmbientSounds from './components/AmbientSounds'
+import Reminders from './components/Reminders'
 import MiniTimer from './components/MiniTimer'
 import CommandPalette from './components/CommandPalette'
 import Dashboard from './components/Dashboard'
-import NewDay from './components/NewDay'
+import NewWorkspace from './components/NewDay'
 import ZenMode from './components/ZenMode'
 import usePomodoro from './hooks/usePomodoro'
 import useTimeBlocks from './hooks/useTimeBlocks'
@@ -86,7 +87,7 @@ function App() {
   return (
     <div className="h-screen flex flex-col bg-zen-bg zen-texture overflow-hidden">
       {showNewDay && (
-        <NewDay
+        <NewWorkspace
           onStart={handleNewDayComplete}
           onCancel={() => setShowNewDay(false)}
         />
@@ -94,16 +95,16 @@ function App() {
       {zenMode && <ZenMode timer={timer} onExit={() => setZenMode(false)} />}
       {showCommandPalette && <CommandPalette onAction={handleCommand} onClose={() => setShowCommandPalette(false)} />}
 
-      {/* Draggable area for traffic lights */}
-      <div className="h-12 flex-shrink-0" style={{ WebkitAppRegion: 'drag' }} />
+      {/* Drag regions on left and right, pill in center is NOT draggable */}
+      <div className="flex-shrink-0 flex items-start">
+        {/* Left drag zone (behind traffic lights) */}
+        <div className="flex-1 h-10" style={{ WebkitAppRegion: 'drag' }} />
 
-      {/* Top bar pill */}
-      <div className="flex-shrink-0 flex items-center justify-center pb-3">
-        <div className="flex items-center gap-1 bg-zen-surface border border-zen-border/40 rounded-full px-1.5 py-1">
-          {/* Page tabs */}
+        {/* Center pill - completely outside drag region */}
+        <div className="flex items-center gap-1 bg-zen-surface border border-zen-border/40 border-t-0 rounded-b-2xl px-2 py-1.5 mt-0">
           <button
             onClick={() => setPage('main')}
-            className={`px-3 py-1 rounded-full text-xs transition-colors ${
+            className={`px-3 py-1.5 rounded-full text-xs transition-colors cursor-pointer ${
               page === 'main' ? 'bg-zen-card text-zen-text' : 'text-zen-muted hover:text-zen-text'
             }`}
           >
@@ -111,7 +112,7 @@ function App() {
           </button>
           <button
             onClick={() => setPage('home')}
-            className={`px-3 py-1 rounded-full text-xs transition-colors ${
+            className={`px-3 py-1.5 rounded-full text-xs transition-colors cursor-pointer ${
               page === 'home' ? 'bg-zen-card text-zen-text' : 'text-zen-muted hover:text-zen-text'
             }`}
           >
@@ -120,27 +121,32 @@ function App() {
 
           <div className="w-px h-4 bg-zen-border/30 mx-1" />
 
-          {/* Timer */}
           <MiniTimer timer={timer} onZenMode={() => setZenMode(true)} />
 
           <div className="w-px h-4 bg-zen-border/30 mx-1" />
 
-          {/* Controls */}
           <AmbientSounds />
+          <Reminders />
           <button
             onClick={() => setShowNewDay(true)}
-            className="text-zen-muted hover:text-zen-sage transition-colors px-2 py-1 rounded-full text-xs"
+            className="text-zen-muted hover:text-zen-sage transition-colors p-1.5 rounded-full cursor-pointer"
             title="New Day"
           >
-            New Day
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
           </button>
           <button
             onClick={() => setShowCommandPalette(true)}
-            className="text-zen-muted/40 hover:text-zen-muted text-xs transition-colors px-2 py-1"
+            className="text-zen-muted/40 hover:text-zen-muted transition-colors p-1.5 cursor-pointer"
+            title="Command Palette (⌘K)"
           >
-            K
+            <span className="text-sm leading-none">⌘</span>
           </button>
         </div>
+
+        {/* Right drag zone */}
+        <div className="flex-1 h-10" style={{ WebkitAppRegion: 'drag' }} />
       </div>
 
       {/* Page content */}

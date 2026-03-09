@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Notification, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, Notification, shell, Tray, Menu, nativeImage } from 'electron'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { getLinearTasks, updateLinearTask, getLinearMe } from './src/main/linear.js'
@@ -7,6 +7,32 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 let mainWindow
+let tray = null
+let trayData = { timer: '', task: '', tasks: [] }
+
+function updateTrayMenu() {
+  if (!tray) return
+  const items = []
+
+  if (trayData.timer) {
+    items.push({ label: `${trayData.timer}`, enabled: false })
+  }
+  if (trayData.task) {
+    items.push({ label: trayData.task, enabled: false })
+  }
+  if (trayData.tasks.length > 0) {
+    items.push({ type: 'separator' })
+    items.push({ label: 'Open Tasks', enabled: false })
+    trayData.tasks.forEach(t => {
+      items.push({ label: `  ${t}`, enabled: false })
+    })
+  }
+  items.push({ type: 'separator' })
+  items.push({ label: 'Show Zen Dash', click: () => { mainWindow?.show(); mainWindow?.focus() } })
+  items.push({ label: 'Quit', click: () => app.quit() })
+
+  tray.setContextMenu(Menu.buildFromTemplate(items))
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -23,7 +49,6 @@ function createWindow() {
     },
   })
 
-  // In dev, load from Vite. In production, load built files.
   if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
     mainWindow.loadURL('http://localhost:5174')
   } else {
@@ -31,8 +56,23 @@ function createWindow() {
   }
 }
 
+// Required for notifications on macOS
+if (process.platform === 'darwin') {
+  app.setAppUserModelId('com.zendash.app')
+}
+
 app.whenReady().then(() => {
   createWindow()
+
+  // Create a tiny transparent icon for the tray
+  const icon = nativeImage.createFromBuffer(
+    Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQABNjN9GQAAAABJREFTrkJggg==', 'base64'),
+    { width: 1, height: 1 }
+  )
+  tray = new Tray(icon)
+  tray.setTitle('')
+  updateTrayMenu()
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -71,11 +111,23 @@ ipcMain.handle('get-linear-me', async (event, apiKey) => {
 })
 
 ipcMain.handle('show-notification', async (event, title, body) => {
-  new Notification({ title, body }).show()
+  const notif = new Notification({ title, body })
+  notif.show()
   return { success: true }
 })
 
 ipcMain.handle('open-external', async (event, url) => {
   await shell.openExternal(url)
   return { success: true }
+})
+
+ipcMain.on('update-tray', (event, text) => {
+  if (tray) {
+    tray.setTitle(text, { fontType: 'monospacedDigit' })
+  }
+})
+
+ipcMain.on('update-tray-data', (event, data) => {
+  trayData = { ...trayData, ...data }
+  updateTrayMenu()
 })
