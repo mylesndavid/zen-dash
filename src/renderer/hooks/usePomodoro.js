@@ -56,7 +56,8 @@ export default function usePomodoro() {
         const m = Math.floor(t / 60)
         const s = (t % 60).toString().padStart(2, '0')
         const name = taskRef.current
-        window.api.updateTray(name ? `${m}:${s} ${name}` : `${m}:${s}`)
+        const short = name ? ` ${name.length > 10 ? name.slice(0, 10).trim() + '...' : name}` : ''
+        window.api.updateTray(`${m}:${s}${short}`)
       } else {
         window.api.updateTray('')
       }
