@@ -159,6 +159,30 @@ ipcMain.handle('open-external', async (event, url) => {
   return { success: true }
 })
 
+ipcMain.handle('run-claude-code', async (event, prompt) => {
+  const { spawn } = await import('child_process')
+  const os = await import('os')
+  const homedir = os.homedir()
+  return new Promise((resolve) => {
+    let output = ''
+    const env = { ...process.env, PATH: process.env.PATH + `:/usr/local/bin:/opt/homebrew/bin:${homedir}/.npm-global/bin` }
+    delete env.CLAUDECODE
+
+    const child = spawn('claude', ['-p', prompt, '--output-format', 'text'], {
+      env,
+      timeout: 60000,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+
+    child.stdout.on('data', (data) => { output += data.toString() })
+    child.stderr.on('data', (data) => { output += data.toString() })
+    child.on('close', () => resolve(output || '(no response)'))
+    child.on('error', (err) => resolve(`Error: ${err.message}`))
+
+    setTimeout(() => { try { child.kill() } catch {} resolve(output || 'Timed out') }, 60000)
+  })
+})
+
 ipcMain.on('update-tray', (event, text) => {
   if (tray) {
     console.log('[TRAY]', JSON.stringify(text))
